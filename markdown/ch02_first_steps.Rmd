@@ -5,7 +5,6 @@ date: "`r format(Sys.Date(), '%B %d %Y')`"
 output:
   pdf_document:
     toc: true
-    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -19,6 +18,14 @@ This chapter focuses on getting familiar with the basic recipes to create graphi
 ```{r libraries, warning = FALSE, message = FALSE}
 # Load libraries
 library(tidyverse)
+library(kableExtra)
+library(patchwork)
+
+# Set ggplot2 theme
+my_theme <- theme(
+  panel.grid = element_blank(), 
+  panel.background = element_rect(fill = "white", color = "black")
+)
 ```
 
 ## Fuel economy data exercises
@@ -27,16 +34,117 @@ library(tidyverse)
 
 If you wanted more general information about the `mpg` dataset (e.g., descriptions of the underlying data, or where to find more detailed information or the source), you could use `?`, `??`, or `help()`.  If you wanted to get a quick summary of the data and see the distribution of each variable, you could use the `summary()` function.  
 
-There are a few additional functions that you could use, some of which are described [here](https://www.r-project.org/help.html).  There is no such vignette for the `mpg` dataset, but `browseVignettes()` or `vignette()` can be used to find tutorials for selected packages.  Additionally, if you really don't know the name of the package you are interested in and don't want to consult Google, you could use the `apropos()` function to identify the object or function in the R environment using regular expression pattern matching.
+There are a few additional functions that you could use, some of which are described at the following page: https://www.r-project.org/help.html.  There is no such vignette for the `mpg` dataset, but `browseVignettes()` or `vignette()` can be used to find tutorials for selected packages.  Additionally, if you really don't know the name of the package you are interested in and don't want to consult Google, you could use the `apropos()` function to identify the object or function in the R environment using regular expression pattern matching.
 
 2) _How can you find out what other datasets are included with ggplot2?_
 
-3) _Apart from the US, most countries use fuel consumption (fuel consumed over fixed distance) rather than fuel economy (distance traveled with a fixed amount of fuel).  How could you convert the `cty` and `hwy` into the European standard of I/100km?_
+To find which datasets are included in ggplot2 (or any other package you are interested in), use the command `data(package = "<package_name>")`.  For example, using `data(package = "ggplot2")`, we can see that there are datasets not only on fuel economy (`mpg`), but others on diamond prices and characteristics (`diamonds`), seal movements (`seals`), and housing sales in Texas (`txhousing`).
+
+3) _Apart from the US, most countries use fuel consumption (fuel consumed over fixed distance) rather than fuel economy (distance traveled with a fixed amount of fuel).  How could you convert the `cty` and `hwy` into the European standard of l/100km?_
+
+To convert the fuel economy variables `cty` and `mpg` into fuel consumption by the European standard of l/100km, we can simply create a new variable `lpkm` by dividing the mpg estimate by the conversion factor 235.21.
+
+```{r}
+# Convert miles per gallon to liters per 100 kilometers
+mpg %>% 
+  mutate(cty_lpkm = round(235.21 / cty, 2), 
+         hwy_lpkm = round(235.21 / hwy, 2)) %>%
+  dplyr::select(manufacturer, model, year, cty, hwy, cty_lpkm, hwy_lpkm) %>% 
+  head() %>% 
+  kbl(caption = "Fuel economy (distance traveled with one US gallon) and fuel consumption (liters consumed per 100 kiometers.") %>%
+  kable_classic_2(full_width = FALSE)
+```
 
 4) _Which manufacturer has the most models in this dataset?  Which model has the most variations?  Does your answer change if you remove the redundant specification of drive train (e.g., "pathfinder 4wd", "a4 quattro") from the model name?_
 
+Dodge has the most models in the dataset (37; see visualization below), and the Dodge caravan 2wd has the most variations (11).  Interestingly, the number doesn't change if we remove the redundant information (e.g., "quattro" or "4wd"), likely because manufacturers don't want to use the same model name as competitors.
+
+```{r echo = FALSE, results = "hide"}
+# Part 1
+mpg %>% 
+  group_by(manufacturer) %>% 
+  summarise(n = n()) %>% 
+  arrange(desc(n)) %>% 
+  head(1)
+
+# Part 2
+mpg %>% 
+  group_by(model) %>% 
+  summarise(n = n()) %>% 
+  arrange(desc(n)) %>% 
+  head(1)
+
+# Part 3
+mpg %>% 
+  mutate(model = str_remove(model, "2wd|4wd|quattro")) %>%
+  group_by(model) %>%
+  summarise(n = n()) %>% 
+  arrange(desc(n)) %>% 
+  head(1)
+
+# Visualization
+mpg %>% 
+  group_by(manufacturer) %>% 
+  summarise(n = n()) %>% 
+  ggplot(aes(fct_reorder(manufacturer, -n), n)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Manufacturer",
+       y = "Count", 
+       title = "Number of models per manufacturer, across all years") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
 
 ## Aesthetic attributes exercises
+
+1) _How would you describe the relationship between `cty` and `hwy`?  Do you have any concerns about drawing conclusions for that plot?_
+
+First, let's generate the plot of the two variables.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+mpg %>% 
+  ggplot(aes(cty, hwy)) +
+  geom_point(aes(color = class)) +
+  geom_smooth(se = TRUE) +
+  labs(x = "City fuel economy (mpg)", 
+       y = "Highway fuel economy (mpg)") +
+  my_theme
+```
+From the plot above, we can see that in general, the highway fuel economy increases as the city fuel economy increases.  However, by mapping `class` to the color aesthetic, we can see that there are differences within each vehicle class that likely have to do with other features of the vehicles, like the year, perhaps.  
+
+2) _What does `ggplot(mpg, aes(model, manufacturer)) + geom_point()` show?  Is it useful?  How could you modify the data to make it more informative?_
+
+In general, the plot produced from the code `ggplot(mpg, aes(model, manufacturer)) + geom_point()` is not very useful because it only shows us the manufacturer for each car model in the dataset in the same way we would view the data in a table.  To modify the data and make it more informative for visualization, we could create a plot to show the total number of vehicles for each manufacturer using a bar chart, for example.  
+
+3) _Describe the data, aesthetic mappings and layers used for each of the following plots.  You'll need to guess a little because you haven't see all the datasets and functions yet, but use your common sense!  See if you can predict what the plot will look like before running the code._
+
+The first plot is identical to one of the plots we generated previously, except there is no variable mapped to the color aesthetic.  The second plot shows the distribution diamond prices as a function of the number of carats.  The third plot is a time series line plot of the number of unemployed Americans over time, starting in 1970 and extending until April 2015.  Finally, the fourth plot shows the distribution of city fuel economy (mpg) for all vehicle models and manufacturers.  
+
+```{r echo = FALSE}
+# Create individual plots
+a <- ggplot(mpg, aes(cty, hwy)) +
+  geom_point() +
+  my_theme
+
+b <- ggplot(diamonds, aes(carat, price)) +
+  geom_point() +
+  my_theme
+
+c <- ggplot(economics, aes(date, unemploy)) +
+  geom_line() + 
+  my_theme
+
+d <- ggplot(mpg, aes(cty)) + 
+  geom_histogram(bins = 50) +
+  my_theme
+
+# Put plots together
+a + b + c + d + 
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")")
+```
 
 ## Faceting exercises
 
