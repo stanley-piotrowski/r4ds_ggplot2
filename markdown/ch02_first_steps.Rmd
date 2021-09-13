@@ -148,5 +148,89 @@ a + b + c + d +
 
 ## Faceting exercises
 
+1) _Experiment with the color, shape, and size aesthetics.  What happens when you map them to continuous values?  What about categorical values?  What happens when you use more than one aesthetic in a plot?_
+
+When you map a continuous variable to an aesthetic like color, for example, a continuous color scale is used.  In contrast, when you map a categorical variable to the same aesthetic, the discrete color scale is used.  To demonstrate, I've plotted the vehicle class (`class`) and the highway fuel economy (`hwy`) with the engine displacement (`displ`) variable mapped to the color aesthetic in one plot and the drive train (`drv`) mapped to the same aesthetic in another.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+a <- mpg %>% 
+  ggplot(aes(class, hwy, color = displ)) +
+  geom_point() +
+  labs(title = "Continuous variable") +
+  my_theme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+b <- mpg %>% 
+  ggplot(aes(class, hwy, color = drv)) +
+  geom_point() +
+  labs(title = "Categorical variable") +
+  my_theme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+a + b + 
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")")
+```
+
+When you map more than one variable to an aesthetic in a plot, the legend populates to display how the aesthetic maps back to the original data.  For example, we can map the `drv` variable to the color aesthetic and the number of cylinders (`cyl`) to the shape aesthetic to see the relationship between `class` and `hwy`.
+
+```{r}
+mpg %>% 
+  ggplot(aes(class, hwy)) +
+  geom_jitter(aes(color = drv, shape = as.factor(cyl))) +
+  my_theme +
+  scale_shape_discrete("# of cylinders") +
+  scale_color_discrete("Drivetrain") +
+  labs(x = "Class", 
+       y = "Highway fuel economy (mpg)")
+```
+
+2) _What happens if you map a continuous variable to shape?  Why?  What happens if you map `trans` to shape?  Why?_
+
+If you try to map a continuous variable, like `displ`, to a shape, ggplot2 will throw an error because shapes are used for distinguishing distinct classes of categorical data.  In other words, there is no continuous scale to apply to various shapes for continuous data.  If you try to map `trans` to shape, technically the variable is categorical, but there are too many shapes to accurately discern (ggplot2 will only map data to 6 distinct shapes).  When the plot becomes overly complicated, it becomes difficult to interpret and alternative strategies are needed.
+
+3) _How is drive train related to fuel economy?  How is drive train related to engine size and class?_
+
+```{r echo FALSE, message = FALSE, warning = FALSE}
+a <- mpg %>% 
+  ggplot(aes(drv, hwy, fill = drv)) + 
+  geom_boxplot() +
+  my_theme +
+  labs(x = "Drive train", 
+       y = "Highway fuel economy (mpg)") +
+  theme(legend.position = "none")
+
+b <- mpg %>% 
+  ggplot(aes(drv, displ, fill = drv)) +
+  geom_boxplot() +
+  my_theme +
+  labs(x = "Drive train", 
+       y = "Engine displacement (liters)") +
+  theme(legend.position = "none")
+
+c <- mpg %>% 
+  group_by(class, drv) %>% 
+  summarise(n = n()) %>% 
+  group_by(class) %>% 
+  mutate(total = sum(n), 
+         proportion = n / total) %>%  
+  ggplot(aes(class, proportion, fill = drv)) +
+  geom_bar(stat = "identity", 
+           position = "stack") +
+  my_theme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(x = "Class", 
+       y = "Proportion") +
+  scale_fill_discrete("Drive train")
+
+a + b + c +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")",
+                  title = "Relationship between drive train, fuel economy, engine size, and vehicle class")
+```
+
+In plot A), we can see that in general, the front-wheel drive drive train has the best fuel economy, with four-wheel drive having the worst fuel economy.  In plot B), we can see that rear-wheel drive vehciles have the largest engines in terms of displacement (liters), with front-wheel drive vehicles having the smallest engines.  When we look at plot C), we can see the proportion of the vehicles in each class by drive train.  For example, we can see that the 2seater vehicles (e.g. ,corvettes) all have rear-wheel drive trains and since they are more like sports cars, should have the largest engines.  In another example, we can see that the pickup trucks in plot C) all have four-wheel drive, and we know that pickups aren't known for exceptional fuel economy.  Low and behold, in plot A) we can see that the four-wheel drive vehicles have the worst highway fuel economy overall (although it's worth noting that a large proportion of SUV's are also four-wheel drive).
+
 ## Plot geoms exercises
 
