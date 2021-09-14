@@ -306,3 +306,197 @@ mpg %>%
 
 ## Plot geoms exercises
 
+1) _What's the problem with the plot created by `ggplot(mpg, aes(cty, hwy)) + geom_point()?  Which of the geoms described above is most effective at remedying the problem?_
+
+The main problem produced by the above code is that many of the points overlap, leading to overplotting of the data.  Plotting the same data with `geom_jitter()` and mapping the `class` variable to the color aesthetic may alleviate this problem.
+
+```{r}
+a <- mpg %>% 
+  ggplot(aes(cty, hwy)) +
+  geom_point() +
+  my_theme +
+  labs(x = "City fuel economy (mpg)", 
+       y = "Highway fuel economy (mpg)", 
+       title = "geom_point()")
+
+b <- mpg %>% 
+  ggplot(aes(cty, hwy)) + 
+  geom_jitter(aes(color = class)) +
+  my_theme + 
+  labs(x = "City fuel economy (mpg)", 
+       y = "Highway fuel economy (mpg)", 
+       title = "geom_jitter()") +
+  theme(legend.position = "none")
+
+a + b + 
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")")
+```
+
+2) _One challenge with `ggplot(mpg, aes(class, hwy)) + geom_boxplot()` is that the ordering or `class` is alphabetical, which is not terribly useful.  How could you change the factor levels to be more informative?_
+
+Below, I've plotted the original boxplot, with `class` in alphabetical order, and the modified boxplot with `class` reordered by median.
+
+```{r}
+a <- mpg %>% 
+  ggplot(aes(class, hwy)) +
+  geom_boxplot() +
+  my_theme +
+  labs(x = "Class", 
+       y = "Highway mpg", 
+       title = "Class ordered alphabetically")
+
+b <- mpg %>% 
+  ggplot(aes(reorder(class, hwy, median), hwy)) +
+  geom_boxplot() +
+  my_theme + 
+  labs(x = "Class", 
+       y = "Highway mpg", 
+       title = "Class ordered by median")
+
+a + b +
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")") +
+  plot_layout(ncol = 1)
+```
+
+3) _Explore the distribution of the carat variable in the `diamonds` dataset.  What binwidth reveals the most interseting patterns?_
+
+Below are several histograms to visualize the distribution of the `carat` variable in the `diamonds` dataset using different binwidths.
+
+```{r}
+a <- diamonds %>% 
+  ggplot(aes(carat)) +
+  geom_histogram(binwidth = 0.01) +
+  labs(title = "Binwidth = 0.01") +
+  my_theme
+
+b <- diamonds %>% 
+  ggplot(aes(carat)) +
+  geom_histogram(binwidth = 0.05) +
+  labs(title = "Binwidth = 0.05") +
+  my_theme
+
+c <- diamonds %>% 
+  ggplot(aes(carat)) +
+  geom_histogram(binwidth = 0.1) +
+  labs(title = "Binwidth = 0.1") +
+  my_theme
+
+d <- diamonds %>% 
+  ggplot(aes(carat)) +
+  geom_histogram(binwidth = 0.25) +
+  labs(title = "Binwidth = 0.25") + 
+  my_theme
+
+a + b + c + d +
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")") +
+  plot_layout(ncol = 2)
+```
+Viewing the plots above, we can see that the smaller binwidths reveal an interesting pattern- a tendency for more diamonds to be near whole-number carats.  This seems plausible, given that it is likely easier for a jeweler to score a diamond using whole numbers instead of fractions of carats.
+
+4) _Explore the distribution of the price variable in the `diamonds` data.  How does the distribution vary by cut?_
+
+We can create a series of violin plots for diamond prices and frequency polygon plots faceted by cut to see the distribution of the price in diamonds for different cuts. 
+
+```{r}
+a <- diamonds %>% 
+  ggplot(aes(cut, price)) +
+  geom_violin(aes(fill = cut)) +
+  labs(x = "Cut",
+       y = "Price (USD)") +
+  my_theme + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+b <- diamonds %>% 
+  ggplot(aes(price)) +
+  geom_freqpoly(aes(color = cut), 
+                binwidth = 1, size = 1) + 
+  labs(x = "Cut", 
+       y = "Price (USD)") +
+  my_theme +
+  facet_wrap(~cut) +
+  theme(legend.position = "none", 
+        strip.background = element_rect(fill = "lightgrey", color = "black"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+a + b +
+  plot_annotation(tag_levels = "A", 
+                  tag_suffix = ")")
+```
+
+From plots A) and B) above, in general we can see that most of the diamonds are less than $5,000 for each category of `cut`, although some cuts are more variable than others.  For example, there appears to be two distinct peaks in the price of diamonds in the good, very good, and premium categories, but less of any discernable pattern in the fair and ideal categories.
+
+5) _You know (at least) three ways to compare the distributions of subgroups: `geom_violin()`, geom_freqpoly()` and the color aesthetic, or `geom_histogram()` and faceting.  What are the strengths and weaknesses of each approach?  What are other approaches you could try?_
+
+Below, we'll plot the distributions of highway fuel economy for each class of vehicle in a subset of the `mpg` dataset and compare the strengths and weaknesses of different approaches.
+
+```{r}
+mpg_subset <- mpg %>% 
+  dplyr::filter(class %in% c("compact", "pickup", "suv"))
+
+a <- mpg_subset %>% 
+  ggplot(aes(reorder(class, hwy, median), hwy)) + 
+  geom_boxplot() +
+  my_theme +
+  labs(x = "Class", 
+       y = "Highway mpg", 
+       title = "geom_boxplot()") +
+  theme(axis.text.x = element_blank())
+
+b <- mpg_subset %>% 
+  ggplot(aes(reorder(class, hwy, median), hwy)) +
+  geom_violin(aes(fill = class)) +
+  geom_quasirandom(alpha = 0.75) +
+  labs(x = "Class", 
+       y = "Highway mpg", 
+       title = "geom_violin() + geom_point()") +
+  my_theme +
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+c <- mpg_subset %>% 
+  ggplot(aes(hwy, color = class)) +
+  geom_freqpoly(size = 1.5, 
+                binwidth = 1) +
+  labs(x = "Class", 
+       y = "Highway mpg", 
+       title = "geom_freqpoly()") +
+  my_theme +
+  scale_color_discrete("Class") +
+  theme(legend.position = "none")
+
+d <- mpg_subset %>% 
+  ggplot(aes(hwy, fill = class)) +
+  geom_histogram(binwidth = 1) +
+  my_theme + 
+  facet_wrap(~class, ncol = 1) +
+  theme(legend.position = "none", 
+        strip.background = element_rect(fill = "lightgrey", color = "black")) +
+  labs(x = "Highway mpg", 
+       y = "Count", 
+       title = "geom_histogram() + facet_wrap()")
+
+d | (a / b / c)
+```
+
+Faceting histograms by the `class` variable makes it easier to interpret the differences in the distributions of highway fuel economy, but this approach is likely only applicable to variables with relatively few levels.  Faceting by a variable with many different categories may make it difficult to interpret the various subplots.  The statistical transformations used in `geom_boxplot()` and `geom_violin()` allow for easy interpretation of the summaries of the data in a relatively compact format.  Coupled with a `geom_point()` or `geom_jitter()` layer, we can easily see the distribution of individual points, while still describing the overall summary of the data.  The `geom_freqpoly()` layer is useful as a compact representation of a faceted series of histograms, but in many situations where there are many values for a given variable, interpreting the plot may become difficult.
+
+4) _Read the documentation for `geom_bar()`.  What does the `weight` aesthetic do?_
+
+In the default case, `geom_bar()` makes the height of the bar for a categorical variable proportional to the count of each case.  If the `weight` aesthetic is used, the sum of the weights is used.  For example, we can use one of the examples from the help documentation and plot the weights of the engine displacement as a function of the class of each vehicle.
+
+```{r}
+mpg %>% 
+  ggplot(aes(class)) +
+  geom_bar(aes(weight = displ)) +
+  labs(x = "Class", 
+       y = "Count", 
+       title = "Count of each vehicle class, weighted by engine size") +
+  my_theme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+5) _Using the techniques already discussed in this chapter, come up with three ways to visualize a 2d categorical distribution. Try them out by visualizing the distribution of model and manufacturer, trans and class, and cyl and trans._
