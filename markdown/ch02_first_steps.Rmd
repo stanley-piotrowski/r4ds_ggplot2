@@ -8,18 +8,19 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 ## Setup
 
 This chapter focuses on getting familiar with the basic recipes to create graphics using ggplot2.
 
-```{r libraries, warning = FALSE, message = FALSE}
+```{r libraries}
 # Load libraries
 library(tidyverse)
 library(kableExtra)
 library(patchwork)
+library(ggbeeswarm)
 
 # Set ggplot2 theme
 my_theme <- theme(
@@ -59,7 +60,7 @@ mpg %>%
 
 Dodge has the most models in the dataset (37; see visualization below), and the Dodge caravan 2wd has the most variations (11).  Interestingly, the number doesn't change if we remove the redundant information (e.g., "quattro" or "4wd"), likely because manufacturers don't want to use the same model name as competitors.
 
-```{r echo = FALSE, results = "hide"}
+```{r}
 # Part 1
 mpg %>% 
   group_by(manufacturer) %>% 
@@ -91,19 +92,18 @@ mpg %>%
   labs(x = "Manufacturer",
        y = "Count", 
        title = "Number of models per manufacturer, across all years") +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  my_theme
 
 ```
 
-## Aesthetic attributes exercises
+## Key components exercises
 
 1) _How would you describe the relationship between `cty` and `hwy`?  Do you have any concerns about drawing conclusions for that plot?_
 
 First, let's generate the plot of the two variables.
 
-```{r echo = FALSE, warning = FALSE, message = FALSE}
+```{r}
 mpg %>% 
   ggplot(aes(cty, hwy)) +
   geom_point(aes(color = class)) +
@@ -122,7 +122,7 @@ In general, the plot produced from the code `ggplot(mpg, aes(model, manufacturer
 
 The first plot is identical to one of the plots we generated previously, except there is no variable mapped to the color aesthetic.  The second plot shows the distribution diamond prices as a function of the number of carats.  The third plot is a time series line plot of the number of unemployed Americans over time, starting in 1970 and extending until April 2015.  Finally, the fourth plot shows the distribution of city fuel economy (mpg) for all vehicle models and manufacturers.  
 
-```{r echo = FALSE}
+```{r include = FALSE}
 # Create individual plots
 a <- ggplot(mpg, aes(cty, hwy)) +
   geom_point() +
@@ -139,20 +139,22 @@ c <- ggplot(economics, aes(date, unemploy)) +
 d <- ggplot(mpg, aes(cty)) + 
   geom_histogram(bins = 50) +
   my_theme
+```
 
+```{r}
 # Put plots together
 a + b + c + d + 
   plot_annotation(tag_levels = "A", 
                   tag_suffix = ")")
 ```
 
-## Faceting exercises
+## Aesthetics exercises
 
 1) _Experiment with the color, shape, and size aesthetics.  What happens when you map them to continuous values?  What about categorical values?  What happens when you use more than one aesthetic in a plot?_
 
 When you map a continuous variable to an aesthetic like color, for example, a continuous color scale is used.  In contrast, when you map a categorical variable to the same aesthetic, the discrete color scale is used.  To demonstrate, I've plotted the vehicle class (`class`) and the highway fuel economy (`hwy`) with the engine displacement (`displ`) variable mapped to the color aesthetic in one plot and the drive train (`drv`) mapped to the same aesthetic in another.
 
-```{r echo = FALSE, message = FALSE, warning = FALSE}
+```{r}
 a <- mpg %>% 
   ggplot(aes(class, hwy, color = displ)) +
   geom_point() +
@@ -191,7 +193,7 @@ If you try to map a continuous variable, like `displ`, to a shape, ggplot2 will 
 
 3) _How is drive train related to fuel economy?  How is drive train related to engine size and class?_
 
-```{r echo FALSE, message = FALSE, warning = FALSE}
+```{r}
 a <- mpg %>% 
   ggplot(aes(drv, hwy, fill = drv)) + 
   geom_boxplot() +
@@ -231,6 +233,76 @@ a + b + c +
 ```
 
 In plot A), we can see that in general, the front-wheel drive drive train has the best fuel economy, with four-wheel drive having the worst fuel economy.  In plot B), we can see that rear-wheel drive vehciles have the largest engines in terms of displacement (liters), with front-wheel drive vehicles having the smallest engines.  When we look at plot C), we can see the proportion of the vehicles in each class by drive train.  For example, we can see that the 2seater vehicles (e.g. ,corvettes) all have rear-wheel drive trains and since they are more like sports cars, should have the largest engines.  In another example, we can see that the pickup trucks in plot C) all have four-wheel drive, and we know that pickups aren't known for exceptional fuel economy.  Low and behold, in plot A) we can see that the four-wheel drive vehicles have the worst highway fuel economy overall (although it's worth noting that a large proportion of SUV's are also four-wheel drive).
+
+## Faceting exercises
+
+1) _What happens if you try to facet by a continuous variable like `hwy`?  What about `cyl`?  What's the key difference?_
+
+First, let's create a series of plots faceted by the continuous variable `hwy`.
+
+```{r}
+mpg %>% 
+  ggplot(aes(drv, cty)) + 
+  geom_quasirandom(alpha = 0.6, size = 1) +
+  my_theme + 
+  facet_wrap(~hwy) +
+  theme(strip.background = element_rect(fill = "skyblue", color = "black")) +
+  labs(title = "Faceting by highway fuel economy (mpg)", 
+       x = "Drive train",
+       y = "City fuel economy (mpg)")
+```
+Next, we'll facet by another continuous variable, `cyl`, and compare the differences.
+
+```{r}
+mpg %>% 
+  ggplot(aes(drv, cty)) +
+  geom_quasirandom(alpha = 0.6, size = 1) +
+  my_theme +
+  facet_wrap(~cyl) +
+  theme(strip.background = element_rect(fill = "skyblue", color = "black")) + 
+  labs(x = "Drive train", 
+       y = "City fuel economy (mpg)", 
+       title = "Faceting by number of cylinders")
+```
+The main difference between the two plots are the number of values in each continuous variable to facet on.  For example, if we look at the first plot faceted by highway fuel economy, we can see that faceting creates a plot for each value, from 12-44 mpg.  In contrast, there are fewer values for the number of cylinders (4, 5, 6, and 8), so faceting on this particular continuous variable is much more informative and easier to interpret.
+
+2) _Use faceting to explore the 3-way relationship between fuel economy, engine size, and number of cylinders.  How does faceting by the number of cylinders change your assessment of the relationship between engine size and fuel economy?_
+
+Let's create a series of plots looking at the engine size and highway fuel economy, faceted by the number of cylinders.
+
+```{r}
+mpg %>% 
+  ggplot(aes(displ, hwy)) +
+  geom_quasirandom(alpha = 0.6, size = 1.5) +
+  my_theme +
+  facet_wrap(~cyl) +
+  theme(strip.background = element_rect(fill = "skyblue", color = "black")) +
+  labs(x = "Engine displacement (l)", 
+       y = "Highway fuel economy (mpg)", 
+       title = "Relationship between engine size, fuel economy, and # of cylinders")
+```
+
+Creating a series of plots like this faceted on the engine size (displacement, in liters; `displ`) shows how in general, smaller engines with fewer cylinders have higher highway fuel economy compared to the largest engines with more cylinders. This is rather intuitive, as we would expect smaller engines to have fewer cylinders and larger engines to have more cylinders.  
+
+3) _Read the documentation for `facet_wrap()`.  What arguments can you use to control how many rows and columns appear in the output?_
+
+The arguments `nrow` and `ncol` in `facet_wrap()` control the number of rows and columns that appear in the output, respectively.
+
+4) _What does the `scales` argument to facet_wrap()` do?  When might you use it?_
+
+The `scales` argument in `facet_wrap()` controls whether or not the x- and y-axes in the faceted plots should all share the same scale (`scales = "fixed"`, the default), or be free to vary in two dimensions (`scales = "free"`), or a single dimension (e.g., `scales = "free_x"`).  When faceting by categorical variables where the distribution of values of the continuous variables may be wildly different it may be a wise choice to allow the scales to be free in the faceted plots.  For example, we can allow both the x- and y-axes of the plot above to have free scales and compare the outputs.
+
+```{r}
+mpg %>% 
+  ggplot(aes(displ, hwy)) +
+  geom_quasirandom(alpha = 0.6, size = 1.5) +
+  my_theme + 
+  facet_wrap(~cyl, scales = "free") +
+  labs(x = "Engine displacement (l)", 
+       y = "Highway fuel economy (mpg)", 
+       title = "Relationship between engine size, fuel economy, and # of cylinders") +
+  theme(strip.background = element_rect(fill = "skyblue", color = "black"))
+```
 
 ## Plot geoms exercises
 
