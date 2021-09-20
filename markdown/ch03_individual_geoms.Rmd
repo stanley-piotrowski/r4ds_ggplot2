@@ -1,0 +1,129 @@
+---
+title: 'Chapter 03: Individual geoms'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r warning = FALSE, message = FALSE}
+# Libraries
+library(tidyverse)
+library(patchwork)
+library(kableExtra)
+library(ggtext)
+library(ggrepel)
+
+# ggplot2 theme
+my_theme <- theme(
+  panel.grid = element_blank(),
+  panel.background = element_rect(fill = "white", color = "black"),
+  axis.title = element_markdown(),
+  plot.title = element_markdown(),
+  plot.subtitle = element_markdown()
+)
+```
+
+
+## Introduction
+
+This chapter focuses on exploring individual geoms: geoms which take `x` and `y` aesthetics, as well as color, size, and fill.  
+
+## Exercises
+
+1) _What geoms would you use to draw each of the following named plots?_
+
+For each of the following plots, we'll use the `starwars` dataset from dplyr, which contains data on different characters in the saga including name, height, mass, home planet, the films they appear in, species, and other information.
+
+```{r}
+glimpse(starwars)
+```
+
+    1.1) _Scatterplot_
+    
+  For a scatterplot, we would use the `goem_point()` geom.  Let's use a scatterplot to explore the relationship between the height (cm) and mass (kg) of different Star Wars characters.  Note, we'll remove any entries with missing data in either of these fields before plotting.
+    
+```{r}
+starwars %>% 
+  filter(!is.na(height) & !is.na(mass)) %>% 
+  ggplot(aes(height, mass)) +
+  geom_point() +
+  geom_label_repel(aes(label = name), 
+                   data = starwars %>% filter(grepl("Jabba", name, ignore.case = TRUE))) +
+  geom_label_repel(aes(label = name), 
+                   data = starwars %>% arrange(mass) %>% head(n = 1)) +
+  my_theme +
+  labs(x = "Height (cm)", 
+       y = "Mass (kg)", 
+       title = "Relationship between height and mass of Star Wars characters", 
+       subtitle = "Heaviest and lightest characters by mass are labeled")
+```
+
+    1.2) _Line chart_
+    
+  To create a line chart to connect observations in the order of the variable on the x-axis, we would use the `geom_line()` geom. 
+
+    1.3) _Histogram_
+    
+  To create a histogram, we would use the `geom_histogram()` geom.  Alternatively, we could use the `geom_bar()` geom and use a statistical transformation to bin and count observations.  For example, we can visualize the distribution of mass across sexes.
+    
+```{r}
+starwars %>% 
+  filter(!is.na(sex) & !is.na(mass)) %>% 
+  ggplot(aes(mass)) +
+  geom_histogram(aes(fill = sex), bins = 50) +
+  facet_wrap(~sex) +
+  labs(x = "Mass (kg)", 
+       y = "Count", 
+       title = "Distribution of mass (kg) across sexes in Star Wars characters") +
+  my_theme +
+  theme(strip.background = element_rect(fill = "lightgrey", color = "black"), 
+        legend.position = "none")
+```
+    
+
+    1.4) _Bar chart_
+
+  To create a bar chart, we would use the `geom_bar()` geom with the `stat = "identity"` argument to ensure that the data are plotted "as is" without statistical transformation.  We can create a bar chart of the number of different characters by species overall.  
+  
+```{r}
+starwars %>% 
+  group_by(species) %>% 
+  summarise(n = n()) %>% 
+  filter(!is.na(species) & n > 1) %>% 
+  ggplot(aes(fct_reorder(species, n, .desc = TRUE), n)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Species", 
+       y = "n", 
+       title = "Number of occurrences of each species across Star Wars films") +
+  my_theme +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+  
+
+    1.5) _Pie chart_
+    
+  To draw a pie chart, we'll use the `geom_bar()` geom with `stat = "identity"` argument and use the `coord_polar` coordinate system.  We'll use a pie chart to plot the proportion of characters from each home world, subsetted by the home worlds with the highest number of characters.  A more thorough description for creating pie charts with ggplot2 can be found here: https://www.r-graph-gallery.com/piechart-ggplot2.html.
+  
+```{r}
+starwars %>% 
+  group_by(homeworld) %>% 
+  summarise(n = n()) %>% 
+  filter(!is.na(homeworld)) %>% 
+  arrange(desc(n)) %>% 
+  filter(n > 2) %>% 
+  ggplot(aes("", n, fill = homeworld)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  my_theme
+```
+  
+
+2) _What's the difference between `geom_path()` and `geom_polygon()`?  What's the difference between `geom_path()` and `geom_tile()`?_
+
+3) _What low-level geoms are used to draw `geom_smooth()`?  What about `geom_boxplot()` and `geom_violin()`?_
