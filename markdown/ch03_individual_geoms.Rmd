@@ -124,6 +124,10 @@ starwars %>%
 ```
   
 
-2) _What's the difference between `geom_path()` and `geom_polygon()`?  What's the difference between `geom_path()` and `geom_tile()`?_
+2) _What's the difference between `geom_path()` and `geom_polygon()`?  What's the difference between `geom_path()` and `geom_line()`?_
+
+The difference between `geom_path()` and `geom_polygon()` is the former draws lines between points in the order they appear in the data, but doesn't draw a final line to close and fill the path, unlike `geom_polygon()`.  When comparing `geom_path()` and `geom_line()`, the former draws lines between points as they appear in the data, while `geom_line()` connects points based on the order of the variable on the x-axis.  `geom_path()` may be used to show the path of movement of a vehicle on a map, for example, while `geom_line()` could be used to visualize time series data.
 
 3) _What low-level geoms are used to draw `geom_smooth()`?  What about `geom_boxplot()` and `geom_violin()`?_
+
+There are several low-level geoms that can be used to build more complex plots.  For example, it seems plausible that `geom_line()`, `geom_rect()`, and `geom_point()` can be combined to be used in `geom_boxplot()`: `geom_rect()` may draw the boundaries of the middle 50% of the data, `geom_line()` may be used to draw the median (the middle line in the boxplot) and the whiskers extending from the box, and `geom_point()` may be used to draw the outliers (if any exist).  In fact, when we look at the code for the `geom_boxplot()` function here (https://github.com/tidyverse/ggplot2/blob/master/R/geom-boxplot.r), we can see that the whiskers and box are rectangles and lines defined in the same way that you would use to draw them in a `geom_rect()` and `geom_line()` call, respectively.  In another case, `geom_smooth()` uses `geom_line()` to draw the smoothed mean response line, and `geom_violin()` relies on `geom_polygon()`.
