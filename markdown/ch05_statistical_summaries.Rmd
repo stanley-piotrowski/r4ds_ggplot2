@@ -1,0 +1,122 @@
+---
+title: 'Chapter 05: Statistical summaries'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output:
+  pdf_document:
+    toc: true
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Setup 
+
+This chapter focuses on displaying statistical summaries of data in geoms to display uncertainty around estimates and distributions.
+
+```{r}
+# Libraries
+library(tidyverse)
+library(ggtext)
+library(patchwork)
+library(ggbeeswarm)
+library(scales)
+
+# ggplot2 theme
+my_theme <- theme(
+  panel.background = element_rect(fill = "white", color = "black"),
+  panel.grid = element_blank(),
+  axis.title = element_markdown(),
+  plot.title = element_markdown(),
+  plot.subtitle = element_markdown()
+)
+```
+
+
+## Exercises
+
+### 5.4.1 Exercises
+
+1) _What binwidth tells you the most interesting story about the distribution of `carat`?_
+
+Here, I'll create a series of plots and vary the binwidth for each to see how binning the data differently can lead to alternative interpretations.  Looking at the series of plots below, we can see that most of the diamonds appear to be around whole number carats.
+
+```{r}
+all_plots <- c(0.01, 0.025, 0.05, 0.1) %>% 
+  lapply(function(x) diamonds %>% 
+           ggplot(aes(carat)) + 
+           geom_histogram(binwidth = x) + 
+           my_theme + 
+           labs(x = "Carat", 
+                y = "Count", 
+                title = paste("binwidth = ", x, sep = "")))
+
+wrap_plots(all_plots) +
+  plot_annotation(tag_levels = "A", tag_suffix = ")")
+```
+
+2) _Draw a histogram of `price`.  What interesting patterns do you see?_
+
+One interesting pattern that arose when visualizing the histogram of `price` is there appears to be a break around $1,500 or so.  This could indicate that there simply aren't any scored diamonds at this particular price point, or it could be due to potential quality issues in the data set.
+
+```{r}
+diamonds %>% 
+  ggplot(aes(price)) +
+  geom_histogram(binwidth = 10) + 
+  labs(x = "Price (USD)", 
+       y = "Count", 
+       title = "Distribution of prices of diamonds across cut, clarity, and carat levels") + 
+  my_theme + 
+  scale_x_continuous(labels = label_dollar())
+```
+
+3) _How does the distribution of `price` vary with `clarity`_
+
+Below I'll plot a series of boxplots to visualize the distribution of `price` with `clarity`.  I've plotted the median price across all clarity classes as a dashed horizontal line.  In general, the median values tend to decrease with increasing diamond clarity, but the number of outliers generally tends to increase with diamond clarity.
+
+```{r}
+diamonds %>% 
+  ggplot(aes(clarity, price)) +
+  geom_boxplot(fill = "lightskyblue",
+               alpha = 0.5) + 
+  geom_hline(yintercept = median(diamonds$price), 
+             linetype = "dashed", 
+             alpha = 0.75) +
+  labs(x = "Clarity", 
+       y = "Price (USD)", 
+       title = "Diamond prices across clarity classes", 
+       subtitle = "Median price across classes is presented as a dashed, horizontal line") + 
+  my_theme + 
+  scale_y_continuous(labels = label_dollar())
+```
+4) _Overlay a frequency polygon and density plot of depth. What computed variable do you need to map to y to make the two plots comparable? (You can either modify geom_freqpoly() or geom_density()._
+
+In order to overlay the plots, we can take two approaches: a) modify the `geom_freqpoly()` call with the argument `stat = "density"` to calculate the density, which is calculated as the observations within each bin, divided by the total number of observations, multiplied by the binwidth; b) modify the `geom_density()` call with the argument `stat = "count"` to modify the statistical transformation to present the number of observations for each bin instead of calculating the density.
+
+```{r}
+p1 <- diamonds %>% 
+  ggplot(aes(depth)) + 
+  geom_freqpoly(stat = "density", color = "red") + 
+  geom_density(color = "blue") + 
+  labs(x = "Depth", 
+       y = "Density", 
+       title = "geom_freqpoly(stat = 'density')") + 
+  my_theme + 
+  xlim(55, 70)
+
+p2 <- diamonds %>% 
+  ggplot(aes(depth)) +
+  geom_freqpoly(color = "red") + 
+  geom_density(stat = "bin", color = "blue") + 
+  labs(x = "Depth", 
+       y = "Density", 
+       title = "geom_density(stat = 'bin')") + 
+  my_theme + 
+  xlim(55, 70)
+
+p1 + p2 + 
+  plot_annotation(tag_levels = "A", tag_suffix = ")")
+```
+
