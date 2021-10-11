@@ -8,10 +8,56 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ## Setup 
 
 This chapter focuses on drawing base maps and adding metadata from other sources using `geom_polygon()`, `geom_sf()`, and `geom_raster()`.
+
+```{r}
+# Libraries
+suppressPackageStartupMessages(library(tidyverse))
+library(ggtext)
+library(ozmaps)
+library(sf)
+library(rmapshaper)
+
+# Set ggplot2 theme
+plot_theme <- theme(
+  panel.background = element_rect(color = "black", fill = "white"),
+  panel.grid = element_blank(),
+  plot.title = element_markdown(),
+  plot.subtitle = element_markdown(),
+  plot.caption = element_markdown(),
+  axis.title.x = element_markdown(),
+  axis.title.y = element_markdown()
+)
+```
+
+## Notes
+
+Below are notes for the various subsections of this chapter:
+
+### Simple features maps
+
+Notes:
+* Simple features objects generally contain a `geometry` field composed of a multipolygon list defining the shape of the object.
+* The user doesn't need to explicity map the `geometry` aesthetic in a `geom_sf()` call- the function automatically looks for the field called `geometry` or if one doesn't exist, looks for a multipolygon field to map.
+* Additional annotations can be mapped onto the same grob using standard ggplot2 syntax.
+
+### Map projections
+
+Notes:
+* Geodetic datum refers to the set of assumptions about the shape of the Earth, which along with the map projection, dictates the location of a coordinate on a 2-D map.  Some of the most popular are the North American Datum (NAD83) and the World Geodetic System (WGS84).
+* Map projections refer to how an ellipsoid shape like the Earth is mapped onto a 2-D plane (e.g., a plot).
+* There are two types of map projections:
+    1) Area-preserving projections- these ensure that regions of the same area are drawn with equal area on the map.
+    2) Shape-preserving (conformal) projections- these ensure that the local shape of a region is preserved.
+* The geodetic datum and the map projection together is referred to as the coordinate reference system (CRS), essentially a set of assumptions and rules to draw multipolygons onto a 2-D map.
+* The `st_crs()` function can be used to inspect the CRS of a given sf object.
+* The function `coord_sf()` ensures that all of the layers in a ggplot2 grob are plotted with the same projection, and using a similar behavior of mapping aesthetics to x and y coordinates uses the CRS of the `geometry` field in the data.
+* In addition to retrieving the CRS from an object, `st_crs()` can be used to define the unambiguous strings for a given CRS using a compact syntax by defining the EPSG code. 
+* For example, using `st_crs(ozmaps_states)` generates several lines of well-known text describing the CRS for the object, which is all summarized in the EPSG code 4283.  In fact, by typing `st_crs(4283)` we get the same well-known text string output.
+* EPSG Geodetic Parameter Dataset is a collection of CRS and transformations that can be queried using a variety of methods (e.g., searching on a map, using strings, etc.).
 
