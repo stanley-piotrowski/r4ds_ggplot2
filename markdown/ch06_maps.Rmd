@@ -1,0 +1,17 @@
+---
+title: 'Chapter 06: Maps'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup 
+
+This chapter focuses on drawing base maps and adding metadata from other sources using `geom_polygon()`, `geom_sf()`, and `geom_raster()`.
+
