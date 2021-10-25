@@ -61,3 +61,7 @@ Notes:
 * For example, using `st_crs(ozmaps_states)` generates several lines of well-known text describing the CRS for the object, which is all summarized in the EPSG code 4283.  In fact, by typing `st_crs(4283)` we get the same well-known text string output.
 * EPSG Geodetic Parameter Dataset is a collection of CRS and transformations that can be queried using a variety of methods (e.g., searching on a map, using strings, etc.).
 
+### Raster maps
+
+Notes:
+* Raster data are in the form of images, unlike simple features format data, which are in the form of points, lines, and polygons.
