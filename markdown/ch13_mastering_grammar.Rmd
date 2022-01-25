@@ -1,0 +1,24 @@
+---
+title: "Ch13: Mastering the Grammar"
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+```{r library setup}
+# Libraries
+library(pacman)
+p_load(tidyverse, scales)
+
+# Source external scripts
+source("../plot_theme.R")
+```
+
