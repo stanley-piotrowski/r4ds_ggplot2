@@ -1,0 +1,73 @@
+---
+title: 'Ch10: Position scales and axes'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Setup
+
+```{r}
+# Libraries
+library(pacman)
+p_load(tidyverse, scales, patchwork)
+
+# Source plot theme
+source("../plot_theme.R")
+```
+
+## Sandbox
+
+This chapter doesn't contain any exercises.  Instead, I'll experiment with the example code and different data sets.
+
+```{r modifying breaks}
+base_plot <- ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() 
+
+p1 <- base_plot +  
+  labs(title = "default")
+
+p2 <- base_plot + 
+  labs(x = NULL, y = NULL, 
+       title = "No y-axis; no axis labels") + 
+  scale_y_continuous(breaks = NULL) 
+
+p3 <- base_plot + 
+  scale_x_reverse() + 
+  labs(title = "Reversed x-axis")
+
+p4 <- base_plot + 
+  scale_y_continuous(trans = "log10") + 
+  scale_x_continuous(trans = "log10") + 
+  labs(title = "Log10-transformed axes")
+
+p1 + p2 + p3 + p4
+```
+
+```{r working with dates}
+# Create the base plot with economics data-- x-axis is the date and y-axis is the personal savings rate
+date_base <- ggplot(economics, aes(date, psavert)) + 
+  geom_line(na.rm = TRUE) + 
+  labs(x = NULL, y = NULL)
+
+# Change year intervals
+date_breaks <- c("5 years", "10 years", "15 years", "20 years")
+date_plots <- map(date_breaks, ~ date_base + 
+                    scale_x_date(breaks = .x, date_labels = "%Y") + 
+                    labs(title = .x))
+
+wrap_plots(date_plots)
+```
+
+```{r binning continuous data}
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_count() + 
+  scale_x_binned(n.breaks = 15) + 
+  scale_y_binned(n.breaks = 15)
+
+```
+
