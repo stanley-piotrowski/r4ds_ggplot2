@@ -1,0 +1,49 @@
+---
+title: 'Ch9: Arranging Plots'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y'`)"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Setup
+
+```{r libraries}
+library(pacman)
+p_load(tidyverse, scales, patchwork, gghighlight)
+```
+
+## Sandbox
+
+This chapter doesn't contain exercises, so I'll experiment with code from the textbook and different data sets. 
+
+```{r customize legend placement}
+p1 <- ggplot(mpg, aes(displ, hwy)) + 
+  geom_point(alpha = 0.75)
+
+p2 <- mpg %>% 
+  count(year, drv) %>% 
+  ggplot(aes(year, n, fill = drv)) + 
+  geom_col(position = "dodge")
+
+p3 <- ggplot(mpg, aes(hwy, fill = drv)) + 
+  geom_density(color = NA) + 
+  facet_grid(rows = vars(drv))
+
+p1 + p2 + p3 + guide_area() + plot_layout(ncol = 2, guides = "collect")
+```
+
+```{r creating inset plots}
+# Place p2 on top of p1
+p1 + inset_element(
+  p2,
+  left = 0.5, 
+  bottom = 0.4,
+  top = 0.95,
+  right = 0.9
+)
+```
+
