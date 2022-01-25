@@ -1,0 +1,97 @@
+---
+title: 'Ch8: Annotations'
+author: "Stan Piotrowski"
+date: "`r format(Sys.Date(), '%B %d %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 4)
+```
+
+## Setup
+
+```{r}
+# Libraries
+library(pacman)
+p_load(tidyverse, scales, patchwork, ggfittext, gghighlight, janitor, 
+       ggforce)
+
+# Source plot theme
+source("../plot_theme.R")
+```
+
+## Sandbox
+
+This chapter doesn't include any exercise.  Instead, I'll experiment with the example code from the book with other data sets and comment on any notable findings.
+
+```{r quote function in labs}
+# Supplying mathematical expression to quote() funtion in axis label
+# Importantly-- the expression doesn't need to be in quotes
+values <- seq(-2, 2, by = 0.01)
+df <- data.frame(
+  x = values, 
+  y = values ^ 3
+)
+
+ggplot(df, aes(x, y)) + 
+  geom_line() + 
+  labs(
+    x = "X", 
+    y = quote(f(x) == x^3)
+  ) + 
+  plot_theme
+```
+
+
+```{r labeling overlapping points}
+# Check overlap of labels when plotting-- use two different sorting orders 
+# The algorithm is fairly simple and if two labels have overlapping positions, the first one that appears in the data frame is plotted
+p1 <- ggplot(mpg, aes(displ, hwy)) + 
+  geom_text(aes(label = model)) + 
+  labs(title = "Default") + 
+  xlim(1, 8)
+
+p2 <- ggplot(mpg, aes(displ, hwy)) + 
+  geom_text(aes(label = model), check_overlap = TRUE) + 
+  labs(title = "Check overlap, default") + 
+  xlim(1, 8)
+
+p3 <- arrange(mpg, desc(displ)) %>% 
+  ggplot(aes(displ, hwy)) + 
+  geom_text(aes(label = model), check_overlap = TRUE) + 
+  labs(title = "Check overlap, sorted") + 
+  xlim(1, 8)
+
+wrap_plots(p1, p2, p3, nrow = 1)
+```
+
+```{r ggfittext}
+# Use the ggfittext package to modify text labels
+starwars_input <- starwars %>% 
+  count(homeworld, species) %>% 
+  filter(n > 1 & !is.na(homeworld))
+
+ggplot(starwars_input, aes(homeworld, n, fill = species, label = n)) + 
+  geom_col(position = "stack") +
+  geom_bar_text(position = "stack")
+```
+
+```{r gghighlight}
+# Highlighting example-- instead of using larger points in a different color behind existing points with ggplot2::annotate(), we can use the gghighlight package 
+# This has the benefit of displaying all of the data while focusing on distinct subsets
+# Use the iris dataset
+clean_names(iris) %>% 
+  ggplot(aes(sepal_length, fill = species, color = species)) + 
+  geom_density() + 
+  gghighlight() + 
+  facet_wrap(~species) + 
+  theme(legend.position = "none")
+
+# Using the ggforce package
+# Fill the ellipse
+ggplot(mpg, aes(displ, hwy)) + 
+  geom_point() + 
+  ggforce::geom_mark_ellipse(aes(fill = as.factor(cyl), group = cyl))
+```
+
