@@ -1,0 +1,56 @@
+---
+title: 'Ch13: Build a plot layer by layer'
+author: "Stan Piotrowski"
+date: "1/25/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Setup
+
+This chapter focuses on building on previous concepts to build comprehensive plots with different data inputs, layers, and further customizations.  This can be accomplished either using the `layer()` function and specifying parameters like the `geom` and `stat`, or using one of the wrapper `geom_x()` calls.
+
+```{r libs}
+library(pacman)
+p_load(tidyverse, scales, patchwork)
+
+source("../plot_theme.R")
+```
+
+## Data exercises
+
+1) The order of arguments in `ggplot()` and the various layer functions differ because in the latter case, you're likely using the same data and mapping different fields to aesthetics.  For example, you may be mapping lines and points using different fields, but with the same data set.  
+
+2) Use the data summarizing each class of car from the `mpg` data set to recreate the plot.  My strategy for this problem is to build each layer by explicitly defining all parameters in separate `geom_point()` and `geom_text()` calls, within providing a default `data` argument to `ggplot()`. 
+
+```{r data ex-2}
+# Summarise
+class_summary <- mpg %>% 
+  group_by(class) %>% 
+  summarise(n = n(), 
+            mean_hwy = mean(hwy))
+
+# Plot
+ggplot() +
+  geom_point(
+    mapping = aes(class, hwy), 
+    data = mpg, 
+    position = "jitter"
+  ) + 
+  geom_point(
+    mapping = aes(class, mean_hwy), 
+    data = class_summary, 
+    color = "red", 
+    position = "identity",
+    size = 4
+  ) + 
+  geom_text(
+    mapping = aes(class, 10, label = paste0("n = ", n)), 
+    data = class_summary, 
+    size = 3
+  )
+```
+
